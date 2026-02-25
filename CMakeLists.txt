@@ -79,7 +79,7 @@ if(ROS_DISTRO STREQUAL "foxy")
     tf2_ros
     pluginlib
     rcpputils
-    ${ZSTD_LIBRARIES}
+    libzstd
   )
 else()
   ament_target_dependencies(network_bridge
