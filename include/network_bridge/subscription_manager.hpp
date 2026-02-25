@@ -30,6 +30,7 @@ SOFTWARE.
 #include <string>
 #include <vector>
 #include <rclcpp/rclcpp.hpp>
+#include "network_bridge/compat.hpp"
 
 /**
  * @class SubscriptionManager

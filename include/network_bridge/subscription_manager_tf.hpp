@@ -32,7 +32,9 @@ SOFTWARE.
 #include <regex>
 
 #include <rclcpp/rclcpp.hpp>
+#ifndef ROS_FOXY
 #include <rclcpp/serialization.hpp>
+#endif
 #include <tf2_msgs/msg/tf_message.hpp>
 
 #include <network_bridge/subscription_manager.hpp>
@@ -125,7 +127,9 @@ protected:
   /**
    * @brief The ROS2 TF2 serialization object.
    */
+#ifndef ROS_FOXY
   rclcpp::Serialization<tf2_msgs::msg::TFMessage> tf2_serialization_;
+#endif
   /**
    * @brief Map linking (frame_id,child_frame_id) to the position in tf_s
    */

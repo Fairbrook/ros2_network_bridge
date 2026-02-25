@@ -25,7 +25,9 @@ SOFTWARE.
 */
 
 #include <rclcpp/qos.hpp>
+#ifndef ROS_FOXY
 #include <tf2_ros/qos.hpp>
+#endif
 #include "network_bridge/subscription_manager_tf.hpp"
 
 SubscriptionManagerTF::SubscriptionManagerTF(
@@ -52,6 +54,26 @@ void SubscriptionManagerTF::create_subscription(
   const std::string & topic,
   const std::string & /*msg_type*/, const rclcpp::QoS & /*qos*/)
 {
+#ifdef ROS_FOXY
+  auto tf_callback = [this](const std::shared_ptr<const tf2_msgs::msg::TFMessage> & tfmsg) {
+      this->tf2_callback(tfmsg);
+    };
+  if (static_tf_) {
+    auto static_qos = network_bridge::compat::static_tf_qos();
+    tf2_subscriber_ = node_->create_subscription<tf2_msgs::msg::TFMessage>(
+      topic, static_qos, tf_callback);
+    RCLCPP_INFO(
+      node_->get_logger(),
+      "Created static TF subscriber for topic %s", topic.c_str());
+  } else {
+    auto dynamic_qos = network_bridge::compat::dynamic_tf_qos();
+    tf2_subscriber_ = node_->create_subscription<tf2_msgs::msg::TFMessage>(
+      topic, dynamic_qos, tf_callback);
+    RCLCPP_INFO(
+      node_->get_logger(),
+      "Created generic TF subscriber for topic %s", topic.c_str());
+  }
+#else
   if (static_tf_) {
     tf2_ros::StaticListenerQoS static_qos;
     tf2_subscriber_ = node_->create_subscription<tf2_msgs::msg::TFMessage>(
@@ -75,6 +97,7 @@ void SubscriptionManagerTF::create_subscription(
       node_->get_logger(),
       "Created generic TF subscriber for topic %s", topic.c_str());
   }
+#endif
 }
 
 bool SubscriptionManagerTF::is_stale() const
@@ -176,6 +199,10 @@ void SubscriptionManagerTF::tf2_callback(
       topic_.c_str(), tfs_.transforms.size());
   }
   std::shared_ptr<rclcpp::SerializedMessage> serialized_msg(new rclcpp::SerializedMessage);
+#ifdef ROS_FOXY
+  network_bridge::compat::serialize_message(tfs_, serialized_msg.get());
+#else
   tf2_serialization_.serialize_message(&tfs_, serialized_msg.get());
+#endif
   callback(serialized_msg);
 }

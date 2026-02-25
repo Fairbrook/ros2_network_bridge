@@ -107,12 +107,21 @@ void SubscriptionManager::create_subscription(
   const std::string & topic,
   const std::string & msg_type, const rclcpp::QoS & qos)
 {
+#ifdef ROS_FOXY
+  subscriber = node_->create_generic_subscription(
+    topic, msg_type, qos,
+    [this](
+      std::shared_ptr<rclcpp::SerializedMessage> serialized_msg) {
+      this->callback(serialized_msg);
+    });
+#else
   subscriber = node_->create_generic_subscription(
     topic, msg_type, qos,
     [this](
       const std::shared_ptr<const rclcpp::SerializedMessage> & serialized_msg) {
       this->callback(serialized_msg);
     });
+#endif
   RCLCPP_INFO(
     node_->get_logger(),
     "Created generic subscriber for topic %s", topic.c_str());
@@ -126,9 +135,14 @@ void SubscriptionManager::callback(
     "Received message on topic %s", topic_.c_str());
   received_msg_ = true;
   is_stale_ = false;
-  data_.resize(serialized_msg->size());
+#ifdef ROS_FOXY
+  size_t msg_size = network_bridge::compat::serialized_message_size(*serialized_msg);
+#else
+  size_t msg_size = serialized_msg->size();
+#endif
+  data_.resize(msg_size);
   auto buff = serialized_msg->get_rcl_serialized_message().buffer;
-  std::copy(buff, buff + serialized_msg->size(), data_.begin());
+  std::copy(buff, buff + msg_size, data_.begin());
 }
 
 void SubscriptionManager::check_subscription()

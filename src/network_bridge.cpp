@@ -30,7 +30,9 @@ SOFTWARE.
 #include <fstream>
 #include <cstring>
 
+#ifndef ROS_FOXY
 #include <rclcpp/serialization.hpp>
+#endif
 #include <pluginlib/class_loader.hpp>
 #include <std_msgs/msg/string.hpp>
 
@@ -302,8 +304,13 @@ void NetworkBridge::receive_data(const uint8_t * data, size_t size)
 
     // Set QoS to Transient Local Durability
     qos.transient_local();
+#ifdef ROS_FOXY
+    publishers_[topic] = std::make_shared<network_bridge::compat::FoxyGenericPublisher>(
+      this, publish_namespace_ + topic, type, qos);
+#else
     publishers_[topic] = this->create_generic_publisher(
       publish_namespace_ + topic, type, qos);
+#endif
     RCLCPP_INFO(
       this->get_logger(), "Created publisher on %s type %s",
       (publish_namespace_ + topic).c_str(), type.c_str());

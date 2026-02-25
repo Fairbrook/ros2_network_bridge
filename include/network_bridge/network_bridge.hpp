@@ -32,6 +32,7 @@ SOFTWARE.
 #include <map>
 #include <rclcpp/rclcpp.hpp>
 
+#include "network_bridge/compat.hpp"
 #include "network_bridge/subscription_manager.hpp"
 #include "network_interfaces/network_interface_base.hpp"
 
@@ -188,7 +189,7 @@ protected:
   /**
    * @brief A map that stores the publisher object against the topic name.
    */
-  std::map<std::string, rclcpp::GenericPublisher::SharedPtr> publishers_;
+  std::map<std::string, GenericPublisherSharedPtr> publishers_;
 
   /**
    * @brief the namespace for the publishers.

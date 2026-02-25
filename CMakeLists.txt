@@ -10,6 +10,18 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Detect ROS distro for API compatibility
+if(DEFINED ENV{ROS_DISTRO})
+  set(ROS_DISTRO $ENV{ROS_DISTRO})
+else()
+  set(ROS_DISTRO "humble")
+endif()
+
+if(ROS_DISTRO STREQUAL "foxy")
+  message(STATUS "Building for ROS 2 Foxy - enabling compatibility layer")
+  add_definitions(-DROS_FOXY)
+endif()
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -20,6 +32,10 @@ find_package(pluginlib REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(ZSTD REQUIRED libzstd)
+
+if(ROS_DISTRO STREQUAL "foxy")
+  find_package(rcpputils REQUIRED)
+endif()
 
 if(BUILD_TESTING)
   find_package(launch_testing_ament_cmake REQUIRED)
@@ -56,24 +72,41 @@ add_library(tcp_interface SHARED
 )
 
 target_link_libraries(network_bridge PUBLIC
-  ${std_msgs_TARGETS}
-  ${tf2_msgs_TARGETS}
-  pluginlib::pluginlib
-  rclcpp::rclcpp
-  tf2_ros::tf2_ros
   ${ZSTD_LIBRARIES}
 )
+if(ROS_DISTRO STREQUAL "foxy")
+  ament_target_dependencies(network_bridge
+    rclcpp
+    std_msgs
+    tf2_msgs
+    tf2_ros
+    pluginlib
+    rcpputils
+  )
+else()
+  ament_target_dependencies(network_bridge
+    rclcpp
+    std_msgs
+    tf2_msgs
+    tf2_ros
+    pluginlib
+  )
+endif()
 
 target_link_libraries(udp_interface PUBLIC
-  pluginlib::pluginlib
-  rclcpp::rclcpp
   ${Boost_LIBRARIES}
+)
+ament_target_dependencies(udp_interface
+  rclcpp
+  pluginlib
 )
 
 target_link_libraries(tcp_interface PUBLIC
-  pluginlib::pluginlib
-  rclcpp::rclcpp
   ${Boost_LIBRARIES}
+)
+ament_target_dependencies(tcp_interface
+  rclcpp
+  pluginlib
 )
 
 pluginlib_export_plugin_description_file(network_bridge network_interface_plugins.xml)
