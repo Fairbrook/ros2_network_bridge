@@ -164,7 +164,7 @@ protected:
   /**
    * @brief The ROS2 generalized subscriber object.
    */
-  rclcpp::GenericSubscription::SharedPtr subscriber;
+  GenericSubscriptionSharedPtr subscriber;
 
   /**
    * @brief The data buffer for the subscription manager.

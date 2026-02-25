@@ -108,10 +108,9 @@ void SubscriptionManager::create_subscription(
   const std::string & msg_type, const rclcpp::QoS & qos)
 {
 #ifdef ROS_FOXY
-  subscriber = node_->create_generic_subscription(
-    topic, msg_type, qos,
-    [this](
-      std::shared_ptr<rclcpp::SerializedMessage> serialized_msg) {
+  subscriber = network_bridge::compat::create_generic_subscription(
+    node_.get(), topic, msg_type, qos,
+    [this](std::shared_ptr<rclcpp::SerializedMessage> serialized_msg) {
       this->callback(serialized_msg);
     });
 #else
