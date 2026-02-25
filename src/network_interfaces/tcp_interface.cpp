@@ -164,7 +164,7 @@ void TcpInterface::receive_thread()
           state = 0;
           break;
         }
-        recv_cb_(std::span<uint8_t>(payload.data(), payload_size));
+        recv_cb_(payload.data(), payload_size);
         state = 0;
         break;
       default:

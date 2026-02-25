@@ -172,7 +172,7 @@ void UdpInterface::receive(
   }
 
   if (!ec) {
-    recv_cb_(std::span<const uint8_t>(receive_buffer_.data(), bytes_recvd));
+    recv_cb_(receive_buffer_.data(), bytes_recvd);
     start_receive();
   } else {
     error_handler(ec, "Failed to receive data");

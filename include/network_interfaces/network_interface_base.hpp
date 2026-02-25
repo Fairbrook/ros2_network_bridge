@@ -26,7 +26,6 @@ SOFTWARE.
 
 #pragma once
 
-#include <span>
 #include <memory>
 #include <vector>
 #include <functional>
@@ -70,7 +69,7 @@ public:
    */
   void initialize(
     const rclcpp::Node::SharedPtr & node,
-    std::function<void(std::span<const uint8_t>)> recv_cb)
+    std::function<void(const uint8_t *, size_t)> recv_cb)
   {
     node_ = node;
     recv_cb_ = recv_cb;
@@ -140,7 +139,7 @@ protected:
   /**
    * @brief The receive callback function.
    */
-  std::function<void(std::span<const uint8_t>)> recv_cb_;
+  std::function<void(const uint8_t *, size_t)> recv_cb_;
 };
 
 }  // namespace network_bridge

@@ -86,9 +86,9 @@ protected:
   /**
    * @brief Callback function for handling received data.
    *
-   * @param data The data to be received, represented as a span.
+   * @param data Pointer to the received data.
    */
-  virtual void receive_data(std::span<const uint8_t> data);
+  virtual void receive_data(const uint8_t * data, size_t size);
 
   /**
    * @brief Sends data to the network interface.
@@ -135,14 +135,14 @@ protected:
   /**
    * @brief Decompresses the given compressed data.
    *
-   * This function takes a span of compressed data and decompresses it,
+   * This function takes compressed data and decompresses it,
    * storing the result in the provided data vector
    *
    * @param compressed_data The compressed data to be decompressed.
    * @param data [out] The vector to store the decompressed data.
    */
   virtual void decompress(
-    std::span<const uint8_t> compressed_data, std::vector<uint8_t> & data);
+    const uint8_t * compressed_data, size_t compressed_size, std::vector<uint8_t> & data);
 
   /**
    * @brief A class template that provides a plugin loader for network interfaces.

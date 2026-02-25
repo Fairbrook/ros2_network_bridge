@@ -27,9 +27,8 @@ SOFTWARE.
 #include "network_bridge/network_bridge.hpp"
 
 #include <zstd.h>
-#include <span>
 #include <fstream>
-#include <bit>
+#include <cstring>
 
 #include <rclcpp/serialization.hpp>
 #include <pluginlib/class_loader.hpp>
@@ -251,7 +250,7 @@ void NetworkBridge::load_network_interface()
   }
 }
 
-void NetworkBridge::receive_data(std::span<const uint8_t> data)
+void NetworkBridge::receive_data(const uint8_t * data, size_t size)
 {
   if (!rclcpp::ok()) {
     return;
@@ -262,7 +261,7 @@ void NetworkBridge::receive_data(std::span<const uint8_t> data)
   // Decompress data
   std::vector<uint8_t> decompressed_data;
   try {
-    decompress(data, decompressed_data);
+    decompress(data, size, decompressed_data);
   } catch (const std::exception & e) {
     RCLCPP_ERROR(
       this->get_logger(),
@@ -281,14 +280,14 @@ void NetworkBridge::receive_data(std::span<const uint8_t> data)
 
   int header_length = sizeof(current_time) + topic.size() + type.size() + 2;
 
-  std::span<const uint8_t> payload(
-    decompressed_data.begin() + header_length, decompressed_data.end());
+  const uint8_t * payload = decompressed_data.data() + header_length;
+  size_t payload_size = decompressed_data.size() - header_length;
 
   float delay = rclcpp::Clock().now().seconds() - current_time;
   RCLCPP_DEBUG(
     this->get_logger(),
     "Received %lu bytes on topic %s with type %s",
-    data.size(), topic.c_str(), type.c_str());
+    size, topic.c_str(), type.c_str());
   RCLCPP_DEBUG(
     this->get_logger(),
     "Decompressed data size: %lu", decompressed_data.size());
@@ -310,12 +309,12 @@ void NetworkBridge::receive_data(std::span<const uint8_t> data)
       (publish_namespace_ + topic).c_str(), type.c_str());
   }
 
-  rclcpp::SerializedMessage msg(payload.size());
-  std::copy(
-    payload.begin(), payload.end(),
-    msg.get_rcl_serialized_message().buffer);
+  rclcpp::SerializedMessage msg(payload_size);
+  std::memcpy(
+    msg.get_rcl_serialized_message().buffer,
+    payload, payload_size);
 
-  msg.get_rcl_serialized_message().buffer_length = payload.size();
+  msg.get_rcl_serialized_message().buffer_length = payload_size;
   if (rclcpp::ok()) {
     publishers_[topic]->publish(msg);
   }
@@ -383,8 +382,8 @@ std::vector<uint8_t> NetworkBridge::create_header(
   const std::string & msg_type)
 {
   double current_time = rclcpp::Clock().now().seconds();
-  auto current_time_bytes =
-    std::bit_cast<std::array<uint8_t, sizeof(current_time)>>(current_time);
+  std::array<uint8_t, sizeof(current_time)> current_time_bytes;
+  std::memcpy(current_time_bytes.data(), &current_time, sizeof(current_time));
 
   int header_length =
     current_time_bytes.size() + topic.size() + 1 + msg_type.size() + 1;
@@ -415,7 +414,7 @@ void NetworkBridge::parse_header(
     return;
   }
 
-  time = std::bit_cast<double>(header.data());
+  std::memcpy(&time, header.data(), sizeof(time));
   topic = reinterpret_cast<const char *>(header.data() + sizeof(time));
   msg_type = reinterpret_cast<const char *>(
     header.data() + sizeof(time) + topic.size() + 1);
@@ -446,12 +445,12 @@ void NetworkBridge::compress(
 }
 
 void NetworkBridge::decompress(
-  std::span<const uint8_t> compressed_data,
+  const uint8_t * compressed_data, size_t compressed_size,
   std::vector<uint8_t> & data)
 {
   // Find the size of the original uncompressed data
   size_t decompressed_size = ZSTD_getFrameContentSize(
-    compressed_data.data(), compressed_data.size());
+    compressed_data, compressed_size);
 
   // Check if the size is known and valid
   if (decompressed_size == ZSTD_CONTENTSIZE_ERROR) {
@@ -465,8 +464,8 @@ void NetworkBridge::decompress(
 
   // Decompress the data
   size_t decompressed_result = ZSTD_decompress(
-    data.data(), decompressed_size, compressed_data.data(),
-    compressed_data.size());
+    data.data(), decompressed_size, compressed_data,
+    compressed_size);
 
   // Check for errors during decompression
   if (ZSTD_isError(decompressed_result)) {
