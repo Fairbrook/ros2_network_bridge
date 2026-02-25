@@ -55,7 +55,7 @@ void SubscriptionManagerTF::create_subscription(
   const std::string & /*msg_type*/, const rclcpp::QoS & /*qos*/)
 {
 #ifdef ROS_FOXY
-  auto tf_callback = [this](const std::shared_ptr<const tf2_msgs::msg::TFMessage> & tfmsg) {
+  auto tf_callback = [this](std::shared_ptr<const tf2_msgs::msg::TFMessage> tfmsg) {
       this->tf2_callback(tfmsg);
     };
   if (static_tf_) {
