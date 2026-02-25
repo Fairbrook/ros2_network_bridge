@@ -71,6 +71,9 @@ add_library(tcp_interface SHARED
   src/network_interfaces/tcp_interface.cpp
 )
 
+target_link_libraries(network_bridge PRIVATE
+  ${ZSTD_LIBRARIES}
+)
 if(ROS_DISTRO STREQUAL "foxy")
   ament_target_dependencies(network_bridge
     rclcpp
@@ -79,7 +82,6 @@ if(ROS_DISTRO STREQUAL "foxy")
     tf2_ros
     pluginlib
     rcpputils
-    libzstd
   )
 else()
   ament_target_dependencies(network_bridge
@@ -91,16 +93,20 @@ else()
   )
 endif()
 
+target_link_libraries(udp_interface PRIVATE
+  ${Boost_LIBRARIES}
+)
 ament_target_dependencies(udp_interface
   rclcpp
   pluginlib
-  ${Boost_LIBRARIES}
 )
 
+target_link_libraries(tcp_interface PRIVATE
+  ${Boost_LIBRARIES}
+)
 ament_target_dependencies(tcp_interface
   rclcpp
   pluginlib
-  ${Boost_LIBRARIES}
 )
 
 pluginlib_export_plugin_description_file(network_bridge network_interface_plugins.xml)
