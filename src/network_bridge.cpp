@@ -238,7 +238,7 @@ void NetworkBridge::load_network_interface()
       std::bind(
         &NetworkBridge::receive_data,
         this,
-        std::placeholders::_1));
+        std::placeholders::_1, std::placeholders::_2));
 
     RCLCPP_INFO(
       this->get_logger(),
