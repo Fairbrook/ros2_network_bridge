@@ -1,5 +1,5 @@
 # See Udp1.yaml for parameter descriptions
-/**/*:
+/**:
   ros__parameters:
     network_interface: "network_bridge::TcpInterface"
 
